@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 
 /* ===========================================
    MOCK DATA — 5 sample roles + default
@@ -6,126 +7,115 @@ import { useState, useEffect, useRef } from "react";
 
 const MOCK_DATA = {
   "Uber Driver": {
-    replacement: "January 01, 2028 – June 30, 2028",
-    confidence:
-      "High confidence: Based on current trends in autonomous vehicle tech and regulatory timelines",
-    when: "Mid-2028 window: Autonomous vehicle models reach Level 4+ maturity by late 2027; full regulatory clearance for routine urban routes expected by Q1 2028. Confidence: High in major urban metros (SF, Phoenix, Austin), Medium in suburban/rural areas where infrastructure lags.",
+    replacement: "March 2028 – September 2029",
+    confidence: "High confidence: Autonomous vehicle deployments are scaling rapidly in permissive regulatory markets",
+    when: "2028–2029 window: Waymo already completes 150K+ weekly autonomous rides across 4 US metros as of early 2025. Tesla FSD v13 approaches unsupervised highway capability. Aurora and Uber's partnership targets commercial autonomous ride-hailing by 2027 in sunbelt cities. Full urban deployment (beyond geo-fenced corridors) hinges on state-level AV legislation, which 28 states are actively drafting. Confidence: Very High for top-10 metros with existing AV infrastructure, Medium for suburban corridors, Low for rural and severe-weather regions.",
     how: [
-      "Routing & logistics optimization via AI-powered apps — already happening (Uber/Lyft real-time dispatch AI)",
-      "Passenger interaction via voice agents (Claude 4 / GPT-5 conversational AI handles ride preferences, complaints, accessibility requests) — within 12 months",
-      "Partial autonomous driving in geo-fenced urban corridors (Waymo, Cruise expansion) — 12–18 months",
-      "Full vehicle autonomy via robotaxis and humanoid-assisted fleet maintenance (Tesla FSD v14+, Figure AI robotics) — 24–36 months",
+      "Dispatch, routing, and surge pricing already fully AI-optimized — Uber's ML systems outperform human decision-making on logistics by 40%+ (happening now)",
+      "Passenger-facing voice agents (powered by Claude/GPT-class models) handle ride preferences, complaints, accessibility requests, and rebooking — replacing phone support entirely within 12 months",
+      "Geo-fenced Level 4 robotaxis operate on fixed urban routes in Phoenix, SF, LA, Austin, and Miami — expanding to 30+ cities by Q2 2027",
+      "Waymo, Zoox, and Tesla deploy mixed fleets (robotaxi + human backup) for suburban and airport routes — 18–24 months",
+      "Full removal of human drivers for standard urban/suburban rides as regulatory frameworks solidify — 30–42 months",
+      "Human drivers retained only for rural routes, severe weather, accessibility edge cases, and regulatory holdout states — indefinitely",
     ],
-    companies:
-      "Waymo (Alphabet) operating 100K+ weekly robotaxi rides in SF/Phoenix; Tesla FSD v13 targeting unsupervised highway driving by mid-2026; Uber partnering with Aurora for autonomous freight & rides; Amazon/Zoox expanding autonomous delivery; Cruise (GM) relaunching with enhanced safety stack; Mobileye (Intel) licensing L4 systems to OEMs.",
-    jobsNow:
-      "1.1M US ride-share drivers active (BLS Q1 2025) → projected 400K by 2030 (Goldman Sachs AI & Labor Report 2025). Displacement concentrated in top-20 metros first. Transition paths: fleet supervisors, remote vehicle monitors, accessibility/special-needs transport, or exit to unrelated gigs.",
-    brutal:
-      "Right now: AI still struggles with edge cases — construction zones, severe weather, unpredictable pedestrians, unmarked rural roads. Within 12 months: Agentic AI (Claude/Gemini) handles 60%+ of dispatch, customer service, and route optimization queries with no human. Logical trajectory: Regulations like the proposed SELF DRIVE Act and state-level AV frameworks enable AI-first deployment for routine urban rides by 2028. Humans retained only for appeals, special-needs transport, and regulatory-mandated oversight in complex zones.",
+    companies: "Waymo (Alphabet) — 150K+ weekly rides, expanding to 10 metros by 2027; Tesla — FSD v13/14 targeting unsupervised highway driving; Aurora Innovation — Uber's exclusive AV partner for ride-hail and freight; Zoox (Amazon) — purpose-built robotaxi for dense urban cores; Cruise (GM) — relaunching with enhanced safety systems after 2024 pause; Mobileye (Intel) — licensing Level 4 stacks to Hyundai, VW, and Ford; Motional (Hyundai/Aptiv) — operating robotaxi fleets in Las Vegas and LA.",
+    jobsNow: "1.1M active US ride-share drivers (BLS Q1 2025). Goldman Sachs AI & Labor Report projects 380K–450K remaining by 2030, concentrated in markets where AV regulation lags. Displacement hits top-20 metros first — SF, Phoenix, and Austin drivers face 80%+ volume loss by 2028. Transition paths: fleet operations supervisors ($55K–$70K), remote vehicle teleoperation monitors ($45K–$60K), accessibility/special-needs transport (growing demand), last-mile delivery coordination, or exit to adjacent logistics roles.",
+    brutal: "Right now: Autonomous vehicles still fail at construction zones, unmapped roads, heavy snow, and chaotic pedestrian environments (school zones, festivals). Within 18 months: Waymo and Tesla's fleet data advantages (billions of cumulative miles) close most edge-case gaps in fair-weather cities. Agentic AI already handles 70%+ of dispatch and customer service queries with no human. Logical trajectory: The SELF DRIVE Act (or state equivalents) enables AI-first deployment for routine urban rides by 2028. Insurance data will show robotaxis are 5–10x safer per mile than human drivers, making regulatory resistance politically untenable. Drivers in Phoenix and SF should plan their exit now — not in 2027.",
     timelineMilestones: [
-      { label: "Now", desc: "AI-assisted routing & dispatch" },
-      { label: "Q3 2026", desc: "Voice agents handle 60% passenger queries" },
-      { label: "Q1 2027", desc: "Robotaxis expand to 30+ cities" },
-      { label: "Q1 2028", desc: "Full replacement range begins" },
+      { label: "Now", desc: "AI runs all dispatch, routing, and surge pricing" },
+      { label: "Q4 2026", desc: "Robotaxis operate in 25+ US cities (geo-fenced)" },
+      { label: "Q2 2028", desc: "Mixed fleets replace 50%+ of human drivers in top metros" },
+      { label: "Q3 2029", desc: "Standard urban rides are majority-autonomous nationwide" },
     ],
   },
   "Sales Rep": {
-    replacement: "July 01, 2027 – December 31, 2028",
-    confidence:
-      "Medium-High confidence: Depends on enterprise adoption speed and deal complexity",
-    when: "Late 2027–2028 window: AI sales agents (Salesforce Einstein GPT, HubSpot AI) handle full pipeline from lead gen to close for transactional B2B/B2C deals by late 2027. Complex enterprise sales with relationship-heavy cycles persist longer. Confidence: High for inside sales/SDR roles, Medium for field/enterprise sales.",
+    replacement: "October 2027 – June 2029",
+    confidence: "Medium-High confidence: Transactional inside sales faces rapid displacement; complex enterprise sales has more runway",
+    when: "Late 2027–mid 2029 window: AI sales agents from Salesforce (Agentforce), HubSpot, and startups like 11x.ai and Artisan already handle cold outreach, lead qualification, and meeting scheduling. By late 2027, conversational AI agents will conduct full discovery calls and product demos for deals under $50K. Complex enterprise deals ($500K+) with multi-stakeholder buying committees and relationship dynamics persist longer. Confidence: Very High for SDR/BDR roles, High for inside sales/account executives on transactional deals, Medium for field enterprise reps.",
     how: [
-      "Lead generation & qualification via AI prospecting tools (Apollo AI, ZoomInfo) — already happening",
-      "Personalized outreach at scale via AI copywriting and sequencing (Outreach AI, Salesloft GPT) — now to 6 months",
-      "Full discovery calls & demos via conversational AI agents (Salesforce Agentforce, Bland.ai) — 12–18 months",
-      "Autonomous deal negotiation & closing for standardized contracts (AI + CRM integration) — 24–30 months",
+      "AI-powered prospecting identifies, scores, and enriches leads 10x faster than human SDRs using intent signals, firmographic data, and buying patterns (Apollo AI, ZoomInfo, Clearbit) — already standard",
+      "Hyper-personalized multi-channel outreach (email, LinkedIn, voice) generated and sequenced by AI at scale — SDR output equivalent: 1 AI agent = 8–12 human SDRs (Outreach AI, Salesloft, 11x.ai) — now to 6 months",
+      "AI phone agents conduct natural, unscripted sales conversations including objection handling, pricing discussion, and meeting booking (Bland.ai, Air AI, Salesforce Agentforce Voice) — 12–18 months",
+      "Autonomous proposal generation, contract negotiation, and deal closing for standardized B2B/B2C transactions under $50K (AI + CPQ + e-signature integration) — 24–30 months",
+      "AI account managers handle renewal, upsell, and cross-sell motions with existing customers — reducing account management headcount 60% — 30–36 months",
     ],
-    companies:
-      "Salesforce (Agentforce platform automating full sales cycles); HubSpot (AI-first CRM rewrite); Gong (AI revenue intelligence replacing sales coaching); Outreach (AI sequencing replacing SDR workflows); Bland.ai & Air AI (autonomous AI phone agents); Klarna (already replaced 700 customer service FTEs with AI).",
-    jobsNow:
-      "1.7M B2B sales reps in US (BLS 2025) → projected 900K by 2030 (McKinsey Global Institute). SDR/BDR roles most exposed. Survivors shift to strategic account management, AI-augmented relationship selling, or sales engineering.",
-    brutal:
-      "Right now: AI can generate emails and qualify leads but can't navigate nuanced objection handling or read a room. Within 12 months: AI agents conduct full discovery calls with human-level conversational ability. Logical trajectory: By 2028, 70% of transactional sales cycles (deals under $50K) are AI-managed end-to-end. Human reps become 'deal architects' for complex enterprise relationships or get displaced entirely.",
+    companies: "Salesforce (Agentforce — autonomous AI agents running full sales cycles inside CRM); HubSpot (Breeze AI rewriting CRM as AI-first); 11x.ai (AI SDR 'Alice' booking meetings autonomously); Artisan (AI BDR platform); Gong (AI revenue intelligence replacing sales managers and coaches); Outreach (AI sequencing eliminating SDR workflows); Bland.ai (AI phone agents passing Turing test on cold calls); Klarna (eliminated 700 support/sales FTEs with AI in 2024, saving $40M annually).",
+    jobsNow: "1.7M B2B sales representatives in the US (BLS 2025). McKinsey Global Institute projects 850K–950K by 2030. SDR/BDR roles (estimated 750K currently) are most exposed — expect 60–70% reduction by 2029. Inside sales reps on transactional deals face 50% displacement. Field enterprise reps are safest near-term. Transition paths: strategic account management (relationship-heavy), sales engineering (technical + human), AI sales tool administration, revenue operations, or customer success (human-trust-dependent).",
+    brutal: "Right now: AI generates great emails and qualifies leads effectively, but stumbles on nuanced objection handling, reading emotional cues in live conversation, and navigating internal politics at buyer organizations. Within 12 months: AI voice agents will conduct discovery calls indistinguishable from skilled humans — Bland.ai demos already fool experienced sales professionals. Logical trajectory: By 2028, 70% of transactional B2B sales cycles (deals under $50K ACV) are AI-managed end-to-end with zero human touchpoints. The remaining human reps become 'deal architects' orchestrating complex enterprise relationships, or they're gone. The uncomfortable truth: most SDRs should be retraining today, not next year.",
     timelineMilestones: [
-      { label: "Now", desc: "AI lead gen & email sequences" },
-      { label: "Q1 2027", desc: "AI agents run discovery calls" },
-      { label: "Q3 2027", desc: "Autonomous deal closing (transactional)" },
-      { label: "Q4 2028", desc: "Full replacement for inside sales" },
+      { label: "Now", desc: "AI handles prospecting, lead scoring, and email outreach" },
+      { label: "Q2 2027", desc: "AI phone agents run live discovery calls and demos" },
+      { label: "Q4 2027", desc: "Autonomous closing for transactional deals (<$50K)" },
+      { label: "Q1 2029", desc: "Inside sales headcount reduced 50%+ industry-wide" },
+      { label: "2030", desc: "Human reps exist only for enterprise strategic accounts" },
     ],
   },
   Nurse: {
-    replacement: "January 01, 2032 – December 31, 2035",
-    confidence:
-      "Low-Medium confidence: Physical care, empathy, and regulatory barriers create significant runway",
-    when: "2032–2035 window: AI handles diagnostics, triage, medication management, and documentation by 2028. Physical patient care (IVs, wound care, mobility assistance) requires robotics maturity not expected before 2032+. Nursing shortages actually increase near-term demand. Confidence: Low for bedside/acute care, Medium-High for administrative nursing tasks.",
+    replacement: "January 2032 – December 2035",
+    confidence: "Low confidence: Physical care requirements, regulatory barriers, and chronic staffing shortages provide significant protection",
+    when: "2032–2035 window: AI will dominate nursing documentation, triage, medication management, and remote patient monitoring well before 2030. However, bedside physical care (IV insertion, wound management, patient repositioning, emergency response) requires humanoid robotics maturity not expected before 2032 at the earliest. The US faces a projected shortage of 200K–450K nurses through 2030, which paradoxically increases demand even as AI automates administrative tasks. Confidence: Very Low for ICU/ER/surgical nurses, Low for bedside acute care, Medium-High for administrative and telehealth nursing roles.",
     how: [
-      "Documentation & charting via ambient AI scribes (Nuance DAX, Abridge) — already happening",
-      "AI-powered triage & symptom assessment (Babylon Health, Ada Health) — now to 12 months",
-      "Medication management & dosage optimization via clinical AI (Epic AI, Tempus) — 12–24 months",
-      "Robotic-assisted physical care (Diligent Robotics Moxi, Toyota nursing bots) — 5–8 years",
-      "Full autonomous nursing for routine care in controlled settings — 8–12 years",
+      "Ambient AI documentation eliminates 70%+ of charting burden — nurses gain 2+ hours per shift (Nuance DAX Copilot, Abridge, Suki AI) — already deployed in 500+ US hospitals",
+      "AI triage systems assess symptoms, prioritize patients, and recommend initial interventions with physician-level accuracy (Babylon Health, Ada Health, Buoy Health) — expanding rapidly now to 18 months",
+      "Medication management AI cross-references patient history, genetics, and drug interactions to optimize dosing and flag errors (Epic AI, Tempus, DrFirst) — 12–24 months for widespread adoption",
+      "Remote patient monitoring via wearables + AI reduces hospital readmissions 30% and eliminates many in-person check-ups (Current Health/Best Buy Health, Biofourmis) — 24–36 months at scale",
+      "Humanoid robots assist with physical tasks: patient repositioning, supply transport, basic wound care in controlled settings (Diligent Robotics Moxi, Sanctuary AI Phoenix, Figure AI) — 5–8 years",
+      "Autonomous nursing in controlled environments (long-term care facilities, rehabilitation centers) where tasks are predictable and low-acuity — 8–12 years",
     ],
-    companies:
-      "Epic Systems (AI-first EHR integration); Nuance/Microsoft (DAX Copilot for clinical documentation); Google DeepMind (Med-PaLM medical AI); Diligent Robotics (Moxi hospital robot); Intuitive Surgical (Da Vinci robotic surgery expanding to routine procedures); Hippocratic AI (AI nurses for non-critical patient communication).",
-    jobsNow:
-      "3.2M registered nurses in US (BLS 2025) → projected 3.4M by 2030 due to aging population demand (despite AI). Administrative nursing roles decline 40%. Net displacement begins post-2032 as robotics mature. Transition: AI-augmented 'super nurses' handling 3× patient loads, informatics, telehealth coordination.",
-    brutal:
-      "Right now: AI is excellent at pattern recognition (reading scans, flagging drug interactions) but terrible at physical care — changing bandages, comforting dying patients, handling combative individuals. Within 2 years: AI eliminates 80% of nursing paperwork, freeing time but also reducing headcount justification. Logical trajectory: Nursing is one of the safest careers near-term due to physical requirements and shortage-driven demand. However, by 2032+, robotic nursing assistants handle routine physical tasks in hospitals. Nurses evolve into care coordinators and AI system overseers.",
+    companies: "Epic Systems — AI integrated across EHR for clinical decision support in 250M+ patient records; Nuance/Microsoft — DAX Copilot deployed in 14,000+ physician practices, expanding to nursing workflows; Google DeepMind — Med-Gemini achieving specialist-level diagnostic accuracy across 14 medical specialties; Hippocratic AI — $1B valuation for AI nurses handling non-critical patient communication and follow-up; Diligent Robotics — Moxi robot deployed in 40+ hospitals for supply delivery and basic tasks; Intuitive Surgical — da Vinci systems expanding from surgery into post-operative monitoring; Viz.ai — AI stroke and cardiac detection reducing time-to-treatment by 60%.",
+    jobsNow: "3.2M registered nurses in the US (BLS 2025). Projected 3.4M–3.5M by 2030 due to aging population demand — one of very few roles where demand still outpaces AI displacement near-term. Administrative nursing roles (utilization review, case management, chart auditing) decline 40–50% by 2029 as AI handles documentation and coding. Net bedside displacement doesn't begin until 2032+ when robotics mature. Transition paths: AI-augmented 'super nurses' managing 3x patient loads with AI support, nursing informatics ($90K–$130K), telehealth coordination, clinical AI oversight and governance roles.",
+    brutal: "Right now: AI reads radiology scans, flags drug interactions, and generates clinical notes better than most nurses — but it cannot insert an IV, comfort a dying patient, restrain a combative individual, or make a judgment call about a patient's 'look' that experienced nurses recognize intuitively. Within 2 years: AI eliminates 80% of nursing paperwork and administrative tasks, freeing time but also eroding the headcount justification for administrative nursing staff. The paradox: hospitals will need fewer total nurses per patient (AI handles documentation, monitoring, triage) even as demand grows from aging demographics. Logical trajectory: Nursing is among the safest careers through 2030 due to physical requirements, licensing barriers, and shortage-driven demand. But by 2032–2035, humanoid robots handle routine physical tasks in hospitals and long-term care. Nurses who evolve into AI-augmented care coordinators thrive; those who resist technology integration find shrinking opportunities.",
     timelineMilestones: [
-      { label: "Now", desc: "AI scribes handle documentation" },
-      { label: "Q2 2027", desc: "AI triage handles 70% of assessments" },
-      { label: "2030", desc: "Nursing robots deployed in major hospitals" },
-      { label: "2032–35", desc: "Routine care automation begins" },
+      { label: "Now", desc: "AI scribes handle 70%+ of documentation" },
+      { label: "Q4 2026", desc: "AI triage standard in major hospital systems" },
+      { label: "2029", desc: "Remote monitoring reduces in-person visits 30%" },
+      { label: "2032", desc: "Nursing robots deployed in long-term care facilities" },
+      { label: "2035", desc: "Routine physical care automation begins in hospitals" },
     ],
   },
   "Graphic Designer": {
-    replacement: "July 01, 2026 – June 30, 2027",
-    confidence:
-      "High confidence: Generative AI already performing most production design tasks",
-    when: "Mid-2026 to mid-2027: AI image/video generation (Midjourney v7, DALL-E 4, Adobe Firefly 3) already handles 80%+ of production design. Remaining creative direction and brand strategy roles shrink as AI improves taste/consistency. Confidence: Very High for production/template designers, Medium for senior creative directors.",
+    replacement: "September 2026 – March 2027",
+    confidence: "Very High confidence: Generative AI has already displaced majority of production design work",
+    when: "Late 2026 to early 2027: This is the most immediately impacted role. Midjourney v6/v7, DALL-E 3/4, Adobe Firefly 3, and Stable Diffusion XL already produce professional-quality images, illustrations, and brand assets in seconds. The remaining moat — complex multi-page layouts, pixel-perfect typography, and maintaining brand consistency across hundreds of assets — is being rapidly closed by Adobe's AI-first Creative Cloud overhaul and Figma's generative design features. Confidence: Very High for production/template designers and freelancers, High for mid-level brand designers, Medium for senior creative directors and UX strategists.",
     how: [
-      "Template-based design (social posts, ads, banners) via AI tools (Canva AI, Adobe Express) — already replaced",
-      "Custom illustration & brand asset generation via Midjourney/DALL-E/Stable Diffusion — happening now",
-      "Full brand identity systems generated by AI with human prompt direction — within 6 months",
-      "Video/motion design via AI (Runway Gen-3, Pika, Sora) replacing motion designers — 6–12 months",
-      "AI creative directors that iterate on brand feedback autonomously — 12–18 months",
+      "Template-based design for social media, ads, and marketing materials is already 90%+ automated by Canva AI and Adobe Express — production designers billing $30–$60/hr have lost most of their market (happening now)",
+      "Custom illustration, photo manipulation, and concept art generation via Midjourney, DALL-E, and Stable Diffusion matches mid-tier professional output — now to 3 months for near-universal adoption",
+      "End-to-end brand identity systems (logos, color palettes, typography, guidelines, asset libraries) generated from text briefs with AI maintaining cross-platform consistency — 6–9 months",
+      "AI video and motion design (Runway Gen-3 Alpha, Kling, Sora, Pika 2.0) replaces motion graphics designers for 80% of commercial video content — 6–12 months",
+      "AI creative directors iterate on brand feedback, generate A/B test variants, and optimize designs for conversion metrics autonomously — 12–18 months",
+      "Remaining human designers become 'taste curators' and AI creative strategists — defining briefs, selecting from AI outputs, and managing brand at the strategic level — ongoing",
     ],
-    companies:
-      "Adobe (Firefly deeply integrated across Creative Cloud, making Photoshop/Illustrator AI-first); Canva (AI-powered design replacing 90% of SMB design needs); Midjourney (dominant in high-quality image generation); Figma (AI auto-layout and design generation); Runway ML (AI video production); Jasper (AI brand voice + visual consistency).",
-    jobsNow:
-      "270K graphic designers in US (BLS 2025) → projected 110K by 2030 (WEF Future of Jobs). Freelance/production designers hit hardest. Survivors pivot to AI creative direction, UX strategy, or become 'prompt artists' bridging human taste with AI execution.",
-    brutal:
-      "Right now: AI generates stunning visuals in seconds that would take a designer hours. It still struggles with precise typography, complex layouts, and brand consistency across 50+ assets. Within 6 months: Multimodal AI models handle end-to-end brand systems with style transfer and consistency controls. Logical trajectory: The $50/hr production designer is already obsolete. The $200/hr creative director has 18–24 months. Design becomes a taste & prompt skill, not a craft skill.",
+    companies: "Adobe — Firefly 3 embedded across entire Creative Cloud; Photoshop, Illustrator, Premiere now AI-first with generative fill, expand, and recolor; Canva — AI design platform serving 190M+ users, replacing SMB designer spend almost entirely; Midjourney — dominant in high-fidelity image generation, v7 approaching photorealism indistinguishable from professional photography; Figma — AI auto-layout, generative component design, and design-to-code reducing designer-to-developer handoff to near-zero; Runway ML — Gen-3 Alpha producing broadcast-quality video from text/image input; Jasper — AI brand voice and visual consistency engine; Ideogram — leading AI typography and text-in-image generation, closing the last major AI design weakness.",
+    jobsNow: "270K graphic designers in the US (BLS 2025). WEF Future of Jobs Report projects 100K–120K by 2030 — a 55–60% reduction and the steepest decline of any creative profession. Freelance and production designers are hardest hit: Upwork and Fiverr report 40%+ decline in design job postings since 2023. Survivors pivot to: AI creative direction ($120K–$180K), UX strategy and research (human-centric), brand strategy consulting, 'prompt artistry' (bridging human aesthetic judgment with AI execution), or 3D/spatial design for AR/VR (less automated).",
+    brutal: "Right now: A non-designer with Midjourney produces visual output in 30 seconds that matches what a production designer creates in 4 hours. AI still struggles with precise typography in complex layouts, maintaining perfect brand consistency across 100+ assets without drift, and understanding cultural nuance in visual communication. Within 6 months: Multimodal AI models handle end-to-end brand systems with style-locking, asset templating, and cross-platform adaptation. The $50/hr production designer is already economically obsolete — clients just haven't all realized it yet. The $200/hr creative director has 12–18 months before AI creative strategy tools match their output for 80% of briefs. Logical trajectory: 'Design' stops being a craft skill and becomes a taste-and-prompt skill. The 10% of designers who master AI tools become 10x more productive and command premium rates. The other 90% face a market that no longer needs them at any price.",
     timelineMilestones: [
-      { label: "Now", desc: "AI handles 80% of production design" },
-      { label: "Q4 2026", desc: "Full brand systems via AI" },
-      { label: "Q2 2027", desc: "Senior design roles shrink 50%" },
-      { label: "2028", desc: "Design = prompt engineering" },
+      { label: "Now", desc: "AI handles 85%+ of production design tasks" },
+      { label: "Q3 2026", desc: "AI brand identity systems go mainstream" },
+      { label: "Q1 2027", desc: "Motion/video design majority-automated" },
+      { label: "Q4 2027", desc: "Mid-level designer roles reduced 50%+" },
+      { label: "2029", desc: "Design is fully a strategy/taste discipline" },
     ],
   },
   "Data Analyst": {
-    replacement: "January 01, 2027 – December 31, 2027",
-    confidence:
-      "High confidence: AI already performing core data analysis tasks end-to-end",
-    when: "2027 window: AI data agents (Claude Artifacts, ChatGPT Code Interpreter, Google Gemini Advanced) already perform SQL queries, build dashboards, run statistical analyses, and generate insights from natural language prompts. Full replacement of junior/mid analysts when AI achieves reliable autonomous data pipeline management. Confidence: Very High for reporting/dashboard analysts, High for insight analysts, Medium for senior strategic analysts.",
+    replacement: "April 2027 – November 2027",
+    confidence: "High confidence: AI already performs core analytical tasks at or above junior analyst level",
+    when: "Mid-to-late 2027: Claude Artifacts, ChatGPT Code Interpreter, and Gemini Advanced already write SQL, build dashboards, run regressions, and generate narrative insights from natural language in minutes. The remaining gap — domain expertise, knowing which questions matter, and communicating findings persuasively to stakeholders — narrows as AI agents gain persistent memory and organizational context. Confidence: Very High for reporting/dashboard analysts and data entry analysts, High for insight/ad-hoc analysts, Medium for senior strategic analysts embedded in decision-making teams.",
     how: [
-      "SQL queries & data extraction from natural language prompts — already happening (ChatGPT, Claude)",
-      "Automated dashboard creation & visualization (Tableau GPT, Power BI Copilot) — now",
-      "Statistical analysis & hypothesis testing via AI agents — within 6 months",
-      "Full data pipeline management: ingestion → cleaning → analysis → insight → recommendation — 12–18 months",
-      "Strategic data interpretation with business context (AI + domain knowledge bases) — 18–24 months",
+      "Natural language to SQL/Python: analysts prompt AI with business questions and receive query results, visualizations, and written summaries — this replaces the core daily workflow of 60%+ of junior analysts (already standard practice)",
+      "Automated dashboard creation and maintenance via Tableau GPT, Power BI Copilot, and Looker AI — reducing dashboard development from days to minutes and eliminating refresh/maintenance work (now to 6 months)",
+      "Statistical analysis, hypothesis testing, and predictive modeling via AI agents that select appropriate methods, validate assumptions, and interpret results (Claude, Gemini) — replacing the analytical judgment of mid-level analysts within 6–12 months",
+      "Full autonomous data pipeline management: AI agents handle ingestion, cleaning, transformation, quality checks, analysis, and insight generation end-to-end with minimal human oversight — 12–18 months",
+      "Strategic data interpretation: AI systems with persistent organizational context (RAG over company data lakes, meeting transcripts, strategy docs) generate insights that account for business nuance — 18–24 months",
     ],
-    companies:
-      "Microsoft (Copilot in Power BI, Excel AI); Tableau/Salesforce (GPT-powered analytics); Google (Gemini in BigQuery, Looker AI); Databricks (AI-first lakehouse with natural language querying); ThoughtSpot (AI-powered business intelligence); Claude/Anthropic (Artifacts for instant data analysis and visualization).",
-    jobsNow:
-      "105K data analysts in US (BLS 2025) → projected 45K dedicated analyst roles by 2030 (McKinsey). However, 'data analysis' becomes embedded skill in every knowledge worker role. Survivors become 'data strategists' who define questions, not answer them.",
-    brutal:
-      "Right now: AI can analyze a dataset, find patterns, build charts, and write summaries better than 70% of junior analysts — in minutes vs. days. It still hallucinates numbers occasionally and misses business context. Within 12 months: AI agents reliably manage full analysis pipelines with human-level accuracy and zero hallucination on structured data. Logical trajectory: 'Data Analyst' as a standalone role largely vanishes by 2028. Every PM, marketer, and exec becomes their own analyst via AI tools. Remaining human analysts focus on ambiguous strategic questions and AI governance.",
+    companies: "Microsoft — Copilot deeply embedded in Power BI, Excel, and Azure Synapse; natural language analytics available to every Office 365 user; Tableau/Salesforce — Einstein GPT turning every Salesforce user into their own analyst; Google — Gemini in BigQuery enabling natural language querying of petabyte-scale data; Duet AI in Looker for automated insight generation; Databricks — AI-first lakehouse with natural language data exploration and automated ML; ThoughtSpot — AI-powered BI replacing self-service analytics dashboards; Anthropic — Claude Artifacts enabling instant data analysis, visualization, and statistical testing from uploaded files; Hex — AI-native data workspace where analysts collaborate with AI agents on notebooks.",
+    jobsNow: "105K dedicated data analyst roles in the US (BLS 2025). McKinsey projects 40K–50K by 2030 — but this understates the shift. 'Data analysis' doesn't disappear; it gets absorbed into every knowledge worker's toolkit via AI. The standalone analyst who pulls data, makes charts, and writes summaries becomes redundant. McKinsey estimates 80% of current data analyst tasks are automatable by 2027 AI capabilities. Transition paths: 'data strategists' who define questions and translate insights to action ($110K–$150K), analytics engineering (building systems AI agents use), AI/ML operations, data governance and ethics, or pivot to product management where analytical skills + business judgment are premium.",
+    brutal: "Right now: AI analyzes a dataset, identifies patterns, builds publication-quality charts, and writes a narrative summary better than 70% of junior analysts — in 3 minutes vs. 3 days. It still occasionally hallucinates statistics and misses business context that a tenured analyst understands intuitively. Within 12 months: AI agents reliably manage full analysis pipelines with near-zero hallucination on structured data and increasing organizational context via RAG systems. The job doesn't get automated overnight — it gets compressed. One senior analyst with AI tools does what a team of 5 did in 2023. Logical trajectory: 'Data Analyst' as a standalone job title largely vanishes by late 2027. Every product manager, marketer, finance lead, and executive becomes their own analyst through AI interfaces. The remaining human analysts are really 'data strategists' — they define the right questions, validate AI reasoning, and translate findings into organizational action. If you're a data analyst today, your survival strategy isn't learning more SQL — it's developing the business judgment and communication skills that AI can't replicate.",
     timelineMilestones: [
-      { label: "Now", desc: "AI handles SQL, dashboards, basic analysis" },
-      { label: "Q3 2026", desc: "Autonomous data pipelines" },
-      { label: "Q1 2027", desc: "Junior analyst roles eliminated" },
-      { label: "Q4 2027", desc: "Full replacement for standard analytics" },
+      { label: "Now", desc: "AI writes SQL, builds dashboards, runs basic analysis" },
+      { label: "Q4 2026", desc: "AI agents manage full data pipelines autonomously" },
+      { label: "Q2 2027", desc: "Reporting and dashboard analyst roles eliminated" },
+      { label: "Q4 2027", desc: "Mid-level insight analyst roles compressed 60%+" },
+      { label: "2029", desc: "Analyst = data strategist defining questions, not answering them" },
     ],
   },
 };
@@ -950,10 +940,7 @@ export default function App() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallUnlocked, setPaywallUnlocked] = useState(false);
   const [paywallProcessing, setPaywallProcessing] = useState(false);
-
-  // ── Email ──
-  const [email, setEmail] = useState("");
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [paywallEmail, setPaywallEmail] = useState("");
 
   /* ── Handlers ── */
 
@@ -1010,23 +997,48 @@ export default function App() {
     setTimeout(() => setShowPaywall(true), 600);
   };
 
-  const handlePaywallClick = () => {
+  const handlePaywallClick = async () => {
+    if (!paywallEmail || !paywallEmail.includes("@")) {
+      alert("Please enter a valid email address.");
+      return;
+    }
     setPaywallProcessing(true);
-    // In production, replace this with actual Stripe Checkout redirect:
-    // window.location.href = 'https://checkout.stripe.com/pay/cs_test_...'
-    // or use Stripe.js: stripe.redirectToCheckout({ sessionId: '...' })
-    //
-    // Stripe test mode simulation:
-    // 1. Show "Redirecting to Stripe..." state
-    // 2. Simulate successful payment callback
-    setTimeout(() => {
-      // Simulating Stripe Checkout redirect + return
-      // In production: Stripe redirects to your success_url after payment
-      // success_url would set a query param like ?payment=success
-      // Then your app reads that param and unlocks the plan
+
+    const userPlanData = {
+      email: paywallEmail,
+      jobTitle,
+      industry,
+      workDesc,
+      location,
+      quizAnswers,
+      rating,
+    };
+    localStorage.setItem("userPlanData", JSON.stringify(userPlanData));
+
+    try {
+      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      if (!stripe) throw new Error("Stripe failed to load");
+
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: paywallEmail }),
+      });
+      const data = await res.json();
+
+      if (data.sessionId) {
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        if (error) throw error;
+      } else if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+    } catch (err) {
+      console.error("Stripe checkout error:", err);
       setPaywallProcessing(false);
-      setPaywallUnlocked(true);
-    }, 2500);
+      alert("Payment setup failed. Please try again.");
+    }
   };
 
   const toggleMulti = (field, value) => {
@@ -1087,6 +1099,7 @@ export default function App() {
           }}
         />
         <div style={{ position: "relative", zIndex: 1, maxWidth: "900px" }}>
+          <img src="/logo.svg" alt="NatSel.ai" style={{ width: "clamp(180px, 30vw, 300px)", height: "auto", marginBottom: "16px" }} />
           <h1
             style={{
               fontSize: "clamp(56px, 10vw, 120px)",
@@ -1704,9 +1717,10 @@ export default function App() {
             </div>
           )}
 
-          {/* ── Paywall / Unlock ── */}
-          {showPaywall && !paywallUnlocked && (
+          {/* ── Paywall ── */}
+          {showPaywall && (
             <div
+              id="paywall"
               style={{
                 textAlign: "center",
                 padding: "32px 24px",
@@ -1726,21 +1740,22 @@ export default function App() {
                   textTransform: "uppercase",
                 }}
               >
-                Unlock Your Full Plan
+                Unlock Your Full Playbook
               </div>
               <h3 style={{ fontSize: "24px", fontWeight: 800, margin: "12px 0 8px" }}>
-                Personalized AI Career Plan
+                NatSel.ai Career Survival Kit
               </h3>
               <p
                 style={{
                   color: "#aaa",
                   fontSize: "14px",
                   margin: "0 auto 20px",
-                  maxWidth: "450px",
+                  maxWidth: "480px",
                 }}
               >
-                Get your custom roadmap: timeline to proficiency, tool recommendations, prompt
-                library, and hiring trends — all tailored to your score and interests.
+                Your personalized 20-page PDF playbook: AI displacement timeline, task-by-task breakdown,
+                recommended tools stack, 10+ tailored prompts, 90-day action plan, and advanced prompt
+                engineering frameworks (ROCA through DROCASTLE-AI).
               </p>
               <div
                 style={{
@@ -1753,161 +1768,55 @@ export default function App() {
                   color: "#ccc",
                 }}
               >
-                <span style={featureTag}>📅 Proficiency Timeline</span>
-                <span style={featureTag}>🛠 Tool Recommendations</span>
+                <span style={featureTag}>📊 Task Vulnerability Breakdown</span>
+                <span style={featureTag}>🛠 Curated Tool Stack</span>
                 <span style={featureTag}>📝 10+ Custom Prompts</span>
-                <span style={featureTag}>💼 Hiring Trends & Salaries</span>
+                <span style={featureTag}>📅 90-Day Action Plan</span>
+                <span style={featureTag}>🧠 6-Level Prompt Frameworks</span>
+              </div>
+              {/* Email input */}
+              <div style={{ maxWidth: "360px", margin: "0 auto 16px" }}>
+                <input
+                  type="email"
+                  value={paywallEmail}
+                  onChange={(e) => setPaywallEmail(e.target.value)}
+                  placeholder="Enter your email for delivery"
+                  required
+                  style={{
+                    ...inputStyle,
+                    textAlign: "center",
+                    fontSize: "15px",
+                    padding: "14px",
+                  }}
+                />
               </div>
               <button
                 type="button"
                 onClick={handlePaywallClick}
-                disabled={paywallProcessing}
+                disabled={paywallProcessing || !paywallEmail}
                 style={{
                   padding: "16px 48px",
-                  background: paywallProcessing ? "#8b021d" : "#D2042D",
+                  background: paywallProcessing ? "#8b021d" : !paywallEmail ? "#555" : "#D2042D",
                   color: "#F0F0F0",
                   border: "none",
                   borderRadius: "10px",
                   fontSize: "18px",
                   fontWeight: 800,
-                  cursor: paywallProcessing ? "wait" : "pointer",
-                  boxShadow: "0 0 25px rgba(210,4,45,0.3)",
+                  cursor: paywallProcessing ? "wait" : !paywallEmail ? "not-allowed" : "pointer",
+                  boxShadow: paywallEmail ? "0 0 25px rgba(210,4,45,0.3)" : "none",
                   transition: "all 0.2s",
                 }}
               >
-                {paywallProcessing ? "Redirecting to Stripe..." : "Unlock for $5 →"}
+                {paywallProcessing ? "Redirecting to Stripe..." : "Unlock Playbook for $9.99 \u2192"}
               </button>
               <p style={{ color: "#555", fontSize: "12px", marginTop: "12px" }}>
-                One-time payment · Stripe Checkout (test mode) · Instant delivery
+                One-time payment · Powered by Stripe (test mode) · Instant PDF download
               </p>
             </div>
           )}
 
-          {/* ── Unlocked Plan ── */}
-          {paywallUnlocked && (
-            <div style={{ marginTop: "24px" }}>
-              <PaywallSuccess rating={rating} quizAnswers={quizAnswers} jobTitle={jobTitle} />
-            </div>
-          )}
         </section>
       )}
-
-      {/* ─── SUBSCRIBE / WAITLIST ─── */}
-      <section
-        style={{ maxWidth: "700px", margin: "0 auto", padding: "40px 20px 60px", textAlign: "center" }}
-      >
-        <div
-          style={{
-            background: "#1a1a1a",
-            borderRadius: "16px",
-            padding: "clamp(24px, 4vw, 40px) clamp(16px, 3vw, 28px)",
-            border: "1px solid #2a2a2a",
-          }}
-        >
-          <h3 style={{ fontSize: "clamp(20px, 3vw, 24px)", fontWeight: 800, margin: "0 0 8px" }}>
-            Stay Ahead of the Curve
-          </h3>
-          <p style={{ color: "#aaa", fontSize: "15px", margin: "0 0 24px" }}>
-            Join for updates on AI career tools, new projections, and exclusive content.
-          </p>
-
-          {!emailSubmitted ? (
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                maxWidth: "440px",
-                margin: "0 auto 20px",
-                flexWrap: "wrap",
-              }}
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                style={{ ...inputStyle, flex: "1 1 220px" }}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (email.includes("@")) setEmailSubmitted(true);
-                }}
-                style={{
-                  padding: "12px 24px",
-                  background: "#D2042D",
-                  color: "#F0F0F0",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  fontSize: "14px",
-                  flex: "0 0 auto",
-                }}
-              >
-                Join for Updates
-              </button>
-            </div>
-          ) : (
-            <div
-              style={{
-                color: "#5aff5a",
-                fontSize: "16px",
-                fontWeight: 700,
-                margin: "0 0 20px",
-              }}
-            >
-              ✓ You're in. We'll be in touch.
-            </div>
-          )}
-
-          <div style={{ color: "#777", fontSize: "13px", lineHeight: 1.8 }}>
-            <strong style={{ color: "#aaa" }}>What you get:</strong> Honest projections + actionable
-            steps. Built for real people facing AI change.
-          </div>
-        </div>
-      </section>
-
-      {/* ─── ENTERPRISE TEASER ─── */}
-      <section style={{ maxWidth: "700px", margin: "0 auto", padding: "0 20px 40px", textAlign: "center" }}>
-        <div
-          style={{
-            background: "linear-gradient(135deg, #1a1a2e 0%, #121212 100%)",
-            borderRadius: "16px",
-            padding: "32px 24px",
-            border: "1px solid #2a2a4a",
-          }}
-        >
-          <div style={{ fontSize: "13px", color: "#7b7bf7", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", marginBottom: "8px" }}>
-            Enterprise
-          </div>
-          <h3 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: 800, margin: "0 0 8px", color: "#F0F0F0" }}>
-            For Teams & Companies
-          </h3>
-          <p style={{ color: "#aaa", fontSize: "14px", margin: "0 0 20px", maxWidth: "450px", marginLeft: "auto", marginRight: "auto" }}>
-            Bulk assessments, team dashboards, and custom AI readiness reports for your organization.
-          </p>
-          <a
-            href="mailto:enterprise@natsel.ai?subject=Enterprise%20Inquiry%20-%20Natsel.ai&body=Hi%2C%20I'm%20interested%20in%20Natsel.ai%20for%20my%20team%2Fcompany.%20Please%20share%20details%20on%20bulk%20pricing%20and%20enterprise%20dashboard%20access."
-            style={{
-              display: "inline-block",
-              padding: "14px 36px",
-              background: "transparent",
-              color: "#7b7bf7",
-              border: "2px solid #7b7bf7",
-              borderRadius: "10px",
-              fontSize: "15px",
-              fontWeight: 700,
-              cursor: "pointer",
-              textDecoration: "none",
-              transition: "all 0.2s",
-            }}
-          >
-            Contact for Bulk Pricing / Enterprise Dashboard Waitlist →
-          </a>
-        </div>
-      </section>
 
       {/* ─── FOOTER ─── */}
       <footer style={{ borderTop: "1px solid #1e1e1e", padding: "32px 20px", textAlign: "center" }}>
@@ -1930,7 +1839,8 @@ export default function App() {
           technological factors. This tool is for informational purposes only and does not constitute
           career or financial advice.
         </p>
-        <p style={{ color: "#333", fontSize: "12px", marginTop: "20px" }}>
+        <img src="/icon.svg" alt="NatSel.ai" style={{ width: "28px", height: "28px", margin: "16px auto 8px", display: "block", opacity: 0.4 }} />
+        <p style={{ color: "#333", fontSize: "12px", marginTop: "4px" }}>
           © 2025 Natsel.ai — All rights reserved.
         </p>
       </footer>
