@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 
-/* ═══════════════════════════════════════════
+/* ===========================================
    MOCK DATA — 5 sample roles + default
-   ═══════════════════════════════════════════ */
+   =========================================== */
 
 const MOCK_DATA = {
   "Uber Driver": {
@@ -155,9 +155,9 @@ const DEFAULT_MOCK = {
   ],
 };
 
-/* ═══════════════════════════════════════════
+/* ===========================================
    OPTION LISTS
-   ═══════════════════════════════════════════ */
+   =========================================== */
 
 const JOB_TITLES = [
   "Account Manager","Accountant","Actor","Actuary","Administrative Assistant","Analyst",
@@ -190,9 +190,9 @@ const INDUSTRIES = [
   "Transportation/Ride-Share","Other",
 ];
 
-/* ═══════════════════════════════════════════
+/* ===========================================
    SMALL COMPONENTS
-   ═══════════════════════════════════════════ */
+   =========================================== */
 
 function AnimatedClock() {
   const [tick, setTick] = useState(0);
@@ -396,9 +396,9 @@ function SelectDropdown({ label, options, value, onChange, required, allowCustom
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ===========================================
    PAYWALL SUCCESS MOCK
-   ═══════════════════════════════════════════ */
+   =========================================== */
 
 function PaywallSuccess({ rating, quizAnswers, jobTitle }) {
   const interests = quizAnswers.interests || [];
@@ -862,9 +862,9 @@ function PaywallSuccess({ rating, quizAnswers, jobTitle }) {
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ===========================================
    SHARED STYLES
-   ═══════════════════════════════════════════ */
+   =========================================== */
 
 const inputStyle = {
   width: "100%",
@@ -912,9 +912,9 @@ const cardHeader = {
   margin: 0,
 };
 
-/* ═══════════════════════════════════════════
+/* ===========================================
    MAIN APP
-   ═══════════════════════════════════════════ */
+   =========================================== */
 
 export default function App() {
   // ── Form ──
@@ -1053,9 +1053,9 @@ export default function App() {
     display: "inline-block",
   });
 
-  /* ═══════════════════════════════════════════
+  /* ===========================================
      RENDER
-     ═══════════════════════════════════════════ */
+     =========================================== */
 
   return (
     <div style={{ background: "#121212", minHeight: "100vh" }}>
