@@ -1741,7 +1741,7 @@ export default function App() {
                   maxWidth: "480px",
                 }}
               >
-                Your personalized 20-page Career Survival Kit PDF: AI displacement timeline,
+                Your personalized Career Survival Kit PDF: AI displacement timeline,
                 task-by-task breakdown, curated tools stack, 10+ tailored prompts, 90-day action plan,
                 and 6-level prompt engineering mastery (ROCA → ROCAS → ROCAST → ROCASTLE → DROCASTLE → DROCASTLE-AI).
               </p>
@@ -1836,7 +1836,7 @@ export default function App() {
                 Your Career Survival Kit Is Ready
               </h3>
               <p style={{ color: "#aaa", fontSize: "14px", margin: "0 0 24px", maxWidth: "420px", marginLeft: "auto", marginRight: "auto" }}>
-                Your personalized 20-page PDF includes everything: AI displacement timeline,
+                Your personalized Career Survival Kit PDF includes everything: AI displacement timeline,
                 task breakdown, tool stack, prompts, 90-day plan, and ROCA through DROCASTLE-AI frameworks.
               </p>
               <button

@@ -140,6 +140,7 @@ const BONUS = [
    PDF GENERATOR
    ================================================ */
 
+
 export function generatePDF(data) {
   const { email, jobTitle, industry, rating, quizAnswers } = data;
   const role = jobTitle || "Professional";
@@ -150,432 +151,236 @@ export function generatePDF(data) {
   const H = doc.internal.pageSize.getHeight();
   const M = 20;
   const CW = W - M * 2;
+  const TOP = 28;
+  const BOT = H - 22;
   const RED = [210, 4, 45];
-  const WHT = [240, 240, 240];
+  const WHT = [235, 235, 235];
   const GRY = [140, 140, 140];
-  const DGRY = [80, 80, 80];
-  let y = 0;
+  const DGRY = [70, 70, 70];
+  let y = TOP;
 
-  // ── Dark background on every page ──
-  const darkBg = () => {
-    doc.setFillColor(18, 18, 18);
-    doc.rect(0, 0, W, H, "F");
+  const darkBg = () => { doc.setFillColor(18, 18, 18); doc.rect(0, 0, W, H, "F"); };
+
+  const drawIcon = (cx, cy, size) => {
+    const s = size / 200;
+    doc.setFillColor(...RED);
+    doc.rect(cx + 30*s, cy + 30*s, 28*s, 140*s, "F");
+    doc.rect(cx + 58*s, cy + 138*s, 22*s, 32*s, "F");
+    doc.rect(cx + 80*s, cy + 110*s, 22*s, 32*s, "F");
+    doc.rect(cx + 102*s, cy + 82*s, 22*s, 32*s, "F");
+    doc.rect(cx + 124*s, cy + 54*s, 22*s, 32*s, "F");
+    doc.rect(cx + 146*s, cy + 30*s, 28*s, 140*s, "F");
   };
 
-  // ── Footer — uses actual jsPDF page count, always consistent ──
-  const drawFooter = () => {
-    const pg = doc.internal.getNumberOfPages();
-    doc.setPage(pg);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...GRY);
-    doc.text("NatSel.ai \u2014 Career Survival Kit", M, H - 10);
-    doc.text("Page " + pg, W - M, H - 10, { align: "right" });
-  };
-
-  const newPage = () => {
-    doc.addPage();
-    darkBg();
-    y = M + 5;
-    drawFooter();
-  };
-
-  const need = (n) => {
-    if (y + n > H - 20) newPage();
-  };
+  const newPage = () => { doc.addPage(); darkBg(); y = TOP; };
+  const need = (n) => { if (y + n > BOT) newPage(); };
 
   const heading = (text, size) => {
-    need(size * 0.6 + 6);
-    doc.setFontSize(size);
-    doc.setTextColor(...RED);
-    doc.setFont("helvetica", "bold");
-    doc.text(text, M, y);
-    y += size * 0.45 + 4;
+    need(size * 0.5 + 8);
+    doc.setFontSize(size); doc.setTextColor(...RED); doc.setFont("helvetica", "bold");
+    doc.text(text, M, y); y += size * 0.45 + 4;
   };
 
   const subheading = (text) => {
-    need(10);
-    doc.setFontSize(10);
-    doc.setTextColor(...GRY);
-    doc.setFont("helvetica", "italic");
-    const lines = doc.splitTextToSize(text, CW);
-    lines.forEach((l) => { doc.text(l, M, y); y += 4.5; });
-    y += 2;
-    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10); doc.setTextColor(...GRY); doc.setFont("helvetica", "italic");
+    doc.splitTextToSize(text, CW).forEach((l) => { need(5); doc.text(l, M, y); y += 4.5; });
+    y += 3; doc.setFont("helvetica", "normal");
   };
 
   const para = (text) => {
-    doc.setFontSize(10);
-    doc.setTextColor(...WHT);
-    doc.setFont("helvetica", "normal");
-    const lines = doc.splitTextToSize(text, CW);
-    lines.forEach((l) => {
-      need(5);
-      doc.text(l, M, y);
-      y += 4.8;
-    });
-    y += 2;
+    doc.setFontSize(10); doc.setTextColor(...WHT); doc.setFont("helvetica", "normal");
+    doc.splitTextToSize(text, CW).forEach((l) => { need(5); doc.text(l, M, y); y += 4.8; });
+    y += 3;
   };
 
   const promptBlock = (text) => {
-    doc.setFontSize(8.5);
-    doc.setTextColor(200, 200, 200);
-    doc.setFont("courier", "normal");
+    doc.setFontSize(8.5); doc.setTextColor(195, 195, 195); doc.setFont("courier", "normal");
     const lines = doc.splitTextToSize(text, CW - 10);
     const bh = lines.length * 3.8 + 8;
     need(bh + 4);
-    doc.setFillColor(28, 28, 28);
-    doc.setDrawColor(50, 50, 50);
+    doc.setFillColor(28, 28, 28); doc.setDrawColor(50, 50, 50);
     doc.roundedRect(M, y - 2, CW, bh, 2, 2, "FD");
-    y += 2;
-    lines.forEach((l) => {
-      doc.text(l, M + 4, y);
-      y += 3.8;
-    });
-    y += 5;
-    doc.setFont("helvetica", "normal");
+    y += 2; lines.forEach((l) => { doc.text(l, M + 4, y); y += 3.8; });
+    y += 5; doc.setFont("helvetica", "normal");
   };
 
-  // ── Shared autoTable dark theme ──
+  const greenBox = (line1, line2) => {
+    need(18);
+    doc.setFillColor(20, 40, 20); doc.setDrawColor(40, 80, 40);
+    const bh = line2 ? 16 : 12;
+    doc.roundedRect(M, y, CW, bh, 2, 2, "FD");
+    doc.setFontSize(8.5); doc.setTextColor(90, 255, 90); doc.setFont("helvetica", "bold");
+    doc.text(line1, M + 4, y + (line2 ? 6 : 7.5));
+    if (line2) { doc.setFont("helvetica", "normal"); doc.text(line2, M + 4, y + 12); }
+    y += bh + 6;
+  };
+
   const tableOpts = {
-    styles: { fontSize: 8, textColor: [220, 220, 220], fillColor: [24, 24, 24], cellPadding: 2.5, lineColor: [50, 50, 50], lineWidth: 0.2 },
+    styles: { fontSize: 8, textColor: [215, 215, 215], fillColor: [24, 24, 24], cellPadding: 2.5, lineColor: [50, 50, 50], lineWidth: 0.2 },
     headStyles: { fillColor: RED, textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
-    alternateRowStyles: { fillColor: [30, 30, 30] },
+    alternateRowStyles: { fillColor: [32, 32, 32] },
+    margin: { left: M, right: M, top: TOP, bottom: 22 },
     willDrawPage: () => { darkBg(); },
-    didDrawPage: () => { drawFooter(); },
   };
 
-  // ══════════════════════════════════════════
-  // PAGE 1: COVER (no page number)
-  // ══════════════════════════════════════════
+  // ══ COVER ══
   darkBg();
+  drawIcon(W / 2 - 15, 38, 30);
+  doc.setFontSize(48); doc.setTextColor(...RED); doc.setFont("helvetica", "bold");
+  doc.text("NATSEL.AI", W / 2, 95, { align: "center" });
+  doc.setFontSize(22); doc.setTextColor(...WHT);
+  doc.text("Career Survival Kit", W / 2, 114, { align: "center" });
+  doc.setFontSize(12); doc.setTextColor(...GRY); doc.setFont("helvetica", "normal");
+  doc.text("Your Personalized Guide to Thriving in the AI Era", W / 2, 132, { align: "center" });
+  doc.setFontSize(14); doc.setTextColor(...WHT); doc.setFont("helvetica", "bold");
+  doc.text((email || "User") + "\u2019s Playbook", W / 2, 160, { align: "center" });
+  doc.setFontSize(11); doc.setTextColor(...GRY); doc.setFont("helvetica", "normal");
+  doc.text(role + " \u00B7 " + ind + " \u00B7 Skill Level " + rating + "/10", W / 2, 172, { align: "center" });
+  doc.setFontSize(8); doc.setTextColor(...DGRY);
+  doc.text("\u00A9 NatSel.ai \u2014 All Rights Reserved", W / 2, H - 25, { align: "center" });
 
-  doc.setFontSize(52);
-  doc.setTextColor(...RED);
-  doc.setFont("helvetica", "bold");
-  doc.text("NATSEL.AI", W / 2, 80, { align: "center" });
-
-  doc.setFontSize(22);
-  doc.setTextColor(...WHT);
-  doc.text("Career Survival Kit", W / 2, 100, { align: "center" });
-
-  doc.setFontSize(13);
-  doc.setTextColor(...GRY);
-  doc.setFont("helvetica", "normal");
-  doc.text("Your Personalized Guide to Thriving in the AI Era", W / 2, 120, { align: "center" });
-
-  doc.setFontSize(14);
-  doc.setTextColor(...WHT);
-  doc.setFont("helvetica", "bold");
-  doc.text((email || "User") + "\u2019s Playbook", W / 2, 150, { align: "center" });
-
-  doc.setFontSize(11);
-  doc.setTextColor(...GRY);
-  doc.setFont("helvetica", "normal");
-  doc.text(role + " \u00B7 " + ind + " \u00B7 Skill Level " + rating + "/10", W / 2, 162, { align: "center" });
-
-  doc.setFontSize(8);
-  doc.setTextColor(...DGRY);
-  doc.text("\u00A9 NatSel.ai \u2014 All Rights Reserved", W / 2, H - 20, { align: "center" });
-
-  // ══════════════════════════════════════════
-  // PAGE 2: EXECUTIVE SUMMARY
-  // ══════════════════════════════════════════
+  // ══ EXECUTIVE SUMMARY ══
   newPage();
-
-  heading("Executive Summary", 20);
-  y += 2;
-
+  heading("Executive Summary", 20); y += 3;
   const risk = getDisplacementRisk(rating);
   const timeline = getTimeline(rating);
   const budgetLabel = getBudgetLabel(budget);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...WHT);
-  doc.setFont("helvetica", "bold");
-  doc.text("AI Displacement Risk: " + risk, M, y); y += 7;
-  doc.text("Timeline to Intermediate AI Proficiency: " + timeline, M, y); y += 7;
-  doc.text("Current Skill Level: " + rating + "/10 | Monthly Budget: " + budgetLabel, M, y); y += 12;
-
-  heading("3 Biggest Threats to Your Role", 14);
-  y += 2;
-
+  doc.setFontSize(11); doc.setTextColor(...WHT); doc.setFont("helvetica", "bold");
+  doc.text("AI Displacement Risk: " + risk, M, y); y += 8;
+  doc.text("Timeline to Intermediate AI Proficiency: " + timeline, M, y); y += 8;
+  doc.text("Current Skill Level: " + rating + "/10 | Monthly Budget: " + budgetLabel, M, y); y += 14;
+  heading("3 Biggest Threats to Your Role", 14); y += 3;
   getThreats(jobTitle).forEach(([title, desc]) => {
-    need(24);
-    doc.setFontSize(11);
-    doc.setTextColor(...WHT);
-    doc.setFont("helvetica", "bold");
-    const titleLines = doc.splitTextToSize("\u25A0 " + title + " \u2014 " + desc, CW);
-    // First part bold (title), then switch to normal for desc
-    doc.text("\u25A0 " + title + " \u2014", M, y);
-    y += 5.5;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(200, 200, 200);
-    const descLines = doc.splitTextToSize(desc, CW - 2);
-    descLines.forEach((l) => { need(5); doc.text(l, M + 2, y); y += 4.8; });
-    y += 5;
+    need(28);
+    doc.setFontSize(11); doc.setTextColor(...WHT); doc.setFont("helvetica", "bold");
+    doc.text("\u25A0 " + title + " \u2014", M, y); y += 6;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(195, 195, 195);
+    doc.splitTextToSize(desc, CW - 4).forEach((l) => { need(5); doc.text(l, M + 3, y); y += 4.8; });
+    y += 6;
   });
 
-  // ══════════════════════════════════════════
-  // PAGE 3: TASK BREAKDOWN
-  // ══════════════════════════════════════════
+  // ══ TASK BREAKDOWN ══
   newPage();
-
   heading("Detailed Role Breakdown", 18);
   subheading("Which parts of your job are most vulnerable to AI \u2014 and which give you a lasting edge.");
-  y += 3;
-
-  doc.autoTable({
-    startY: y,
-    margin: { left: M, right: M },
-    head: [["Task", "% Automatable", "Why", "Action to Mitigate"]],
-    body: getTaskBreakdown(jobTitle),
-    ...tableOpts,
-    columnStyles: { 0: { cellWidth: 32, fontStyle: "bold" }, 1: { cellWidth: 18, halign: "center" }, 2: { cellWidth: 50 }, 3: { cellWidth: 52 } },
+  y += 2;
+  doc.autoTable({ startY: y, head: [["Task", "% Automatable", "Why", "Action to Mitigate"]], body: getTaskBreakdown(jobTitle), ...tableOpts,
+    columnStyles: { 0: { cellWidth: 32, fontStyle: "bold" }, 1: { cellWidth: 20, halign: "center" }, 2: { cellWidth: 48 }, 3: { cellWidth: 52 } },
   });
-  y = doc.lastAutoTable.finalY + 6;
+  y = doc.lastAutoTable.finalY + 8;
+  greenBox("Key Takeaway: Your automatable tasks overlap heavily with what current AI tools handle well.",
+    "Survival strategy: migrate toward architecture, strategy, and human-centric skills \u2014 fast.");
 
-  need(16);
-  doc.setFillColor(20, 40, 20);
-  doc.setDrawColor(40, 80, 40);
-  doc.roundedRect(M, y, CW, 14, 2, 2, "FD");
-  doc.setFontSize(8.5);
-  doc.setTextColor(90, 255, 90);
-  doc.setFont("helvetica", "bold");
-  doc.text("Key Takeaway: Your automatable tasks overlap with what current AI tools handle well.", M + 4, y + 5.5);
-  doc.setFont("helvetica", "normal");
-  doc.text("Your survival strategy: migrate toward architecture, strategy, and human-centric skills \u2014 fast.", M + 4, y + 10.5);
-  y += 20;
-
-  // ══════════════════════════════════════════
-  // PAGE 4: TOOL STACK
-  // ══════════════════════════════════════════
+  // ══ TOOL STACK ══
   newPage();
-
   heading("Recommended AI Tools Stack", 18);
   subheading("Curated for " + ind + " \u00B7 Skill Level " + rating + "/10 \u00B7 Budget " + budgetLabel);
-  y += 3;
-
-  doc.autoTable({
-    startY: y,
-    margin: { left: M, right: M },
-    head: [["Tool", "Use Case", "Link", "Cost"]],
-    body: getToolStack(jobTitle, rating, budget),
-    ...tableOpts,
-    columnStyles: { 0: { cellWidth: 30, fontStyle: "bold" }, 1: { cellWidth: 62 }, 2: { cellWidth: 38 }, 3: { cellWidth: 26 } },
+  y += 2;
+  doc.autoTable({ startY: y, head: [["Tool", "Use Case", "Link", "Cost"]], body: getToolStack(jobTitle, rating, budget), ...tableOpts,
+    columnStyles: { 0: { cellWidth: 30, fontStyle: "bold" }, 1: { cellWidth: 60 }, 2: { cellWidth: 38 }, 3: { cellWidth: 24 } },
   });
-  y = doc.lastAutoTable.finalY + 6;
+  y = doc.lastAutoTable.finalY + 8;
+  greenBox("Budget Fit: Start with free tiers. Add one paid tool with highest ROI for your daily work.");
 
-  need(14);
-  doc.setFillColor(20, 40, 20);
-  doc.setDrawColor(40, 80, 40);
-  doc.roundedRect(M, y, CW, 12, 2, 2, "FD");
-  doc.setFontSize(8.5);
-  doc.setTextColor(90, 255, 90);
-  doc.setFont("helvetica", "bold");
-  doc.text("Budget Fit: Start with free tiers. Add one paid tool with highest ROI for your daily work.", M + 4, y + 7.5);
-  y += 18;
-
-  // ══════════════════════════════════════════
-  // PAGES 5-6: PROMPTS
-  // ══════════════════════════════════════════
+  // ══ PROMPTS ══
   newPage();
-
   heading("10 Core Prompts for " + role + "s", 18);
   subheading("Tailored to " + ind + " \u00B7 Skill Level " + rating + "/10");
-  y += 3;
-
+  y += 2;
   getPrompts(jobTitle).forEach((p, i) => {
-    need(28);
-    doc.setFontSize(10);
-    doc.setTextColor(...RED);
-    doc.setFont("helvetica", "bold");
-    doc.text("[" + p.tag + "] #" + (i + 1) + " \u2014 " + p.title, M, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    need(26);
+    doc.setFontSize(10); doc.setTextColor(...RED); doc.setFont("helvetica", "bold");
+    doc.text("[" + p.tag + "] #" + (i + 1) + " \u2014 " + p.title, M, y); y += 6;
     promptBlock(p.p);
   });
 
-  // ══════════════════════════════════════════
-  // 90-DAY PLAN
-  // ══════════════════════════════════════════
+  // ══ 90-DAY PLAN ══
   newPage();
-
   heading("90-Day Action Plan", 18);
   subheading("Personalized for: " + role + " \u00B7 " + ind + " \u00B7 Skill Level " + rating + "/10");
-  y += 3;
-
+  y += 2;
   get90DayPlan(jobTitle).forEach((phase) => {
-    need(22);
-    doc.setFontSize(13);
-    doc.setTextColor(...RED);
-    doc.setFont("helvetica", "bold");
-    doc.text(phase.phase, M, y);
-    y += 7;
-
-    doc.autoTable({
-      startY: y,
-      margin: { left: M, right: M },
-      head: [["Week", "Goals", "Tools / Prompts", "Time"]],
-      body: phase.rows,
-      ...tableOpts,
+    need(20);
+    doc.setFontSize(12); doc.setTextColor(...RED); doc.setFont("helvetica", "bold");
+    doc.text(phase.phase, M, y); y += 7;
+    doc.autoTable({ startY: y, head: [["Week", "Goals", "Tools / Prompts", "Time"]], body: phase.rows, ...tableOpts,
       columnStyles: { 0: { cellWidth: 12, halign: "center" }, 1: { cellWidth: 78 }, 2: { cellWidth: 44 }, 3: { cellWidth: 18, halign: "center" } },
     });
-    y = doc.lastAutoTable.finalY + 6;
+    y = doc.lastAutoTable.finalY + 8;
   });
+  greenBox("Total: ~5\u20136 hours/week for 12 weeks. Less than 1 hour per workday to transform your career.");
 
-  need(14);
-  doc.setFillColor(20, 40, 20);
-  doc.setDrawColor(40, 80, 40);
-  doc.roundedRect(M, y, CW, 12, 2, 2, "FD");
-  doc.setFontSize(8.5);
-  doc.setTextColor(90, 255, 90);
-  doc.setFont("helvetica", "bold");
-  doc.text("Total: ~5\u20136 hours/week for 12 weeks. Less than 1 hour per workday.", M + 4, y + 7.5);
-  y += 18;
-
-  // ══════════════════════════════════════════
-  // MASTER AI PROMPTING INTRO
-  // ══════════════════════════════════════════
+  // ══ MASTER AI PROMPTING ══
   newPage();
-
-  heading("Master AI Prompting", 20);
-
-  doc.setFontSize(14);
-  doc.setTextColor(...WHT);
-  doc.setFont("helvetica", "bold");
+  heading("Master AI Prompting", 20); y += 2;
+  doc.setFontSize(14); doc.setTextColor(...WHT); doc.setFont("helvetica", "bold");
   doc.text("The ROCA Framework & Beyond", M, y); y += 10;
-
   doc.setFont("helvetica", "normal");
-  para("The following pages contain NatSel.ai's proprietary prompt engineering system \u2014 from beginner (ROCA) to the most advanced level (DROCASTLE-AI). Each framework builds on the last. Start with your current skill level and progress upward.");
+  para("The following pages contain NatSel.ai\u2019s proprietary prompt engineering system \u2014 from beginner (ROCA) to the most advanced level (DROCASTLE-AI). Each framework builds on the last. Start with your current skill level and progress upward.");
   y += 2;
-  para("Look for arrows (--> <--) \u2014 those mark the spots where you customize the prompt with your own details.");
+  para("Look for arrows ( --> <-- ) throughout the frameworks \u2014 those mark the spots where you customize the prompt with your own details.");
   y += 6;
-
-  // Framework Index Table
   heading("Prompt Framework Index", 14);
-  subheading("Choose the right level of prompting power for your task.");
-  y += 2;
+  subheading("Choose the right level of prompting power for your task."); y += 2;
+  doc.autoTable({ startY: y, head: [["Level", "Framework", "Best For", "When to Use"]], body: [
+    ["1", "ROCA", "Basic structured prompts", "Simple research, lists, summaries"],
+    ["2", "ROCAS", "Step-by-step reasoning", "AI needs to think logically"],
+    ["3", "ROCAST", "ROCAS + Feynman-style tone", "Clarity and directness matter"],
+    ["4", "ROCASTLE", "Logic checks + evidence", "High-stakes analysis"],
+    ["5", "DROCASTLE", "Domain-locked expert analysis", "Recurring topic areas"],
+    ["6", "DROCASTLE-AI", "Full power + audience + iteration", "Polished reader-specific answers"],
+  ], ...tableOpts, columnStyles: { 0: { cellWidth: 12, halign: "center" }, 1: { cellWidth: 32, fontStyle: "bold" }, 2: { cellWidth: 52 }, 3: { cellWidth: 52 } } });
+  y = doc.lastAutoTable.finalY + 10;
 
-  doc.autoTable({
-    startY: y,
-    margin: { left: M, right: M },
-    head: [["Level", "Framework", "Best For", "When to Use"]],
-    body: [
-      ["1", "ROCA", "Basic structured prompts", "Simple research, lists, summaries"],
-      ["2", "ROCAS", "Step-by-step reasoning", "AI needs to think through logically"],
-      ["3", "ROCAST", "ROCAS + Feynman-style tone", "Clarity and directness matter"],
-      ["4", "ROCASTLE", "Logic checks + evidence", "High-stakes questions"],
-      ["5", "DROCASTLE", "Domain-locked expert analysis", "Recurring topic areas"],
-      ["6", "DROCASTLE-AI", "Full power + audience + iteration", "Polished, reader-specific answers"],
-    ],
-    ...tableOpts,
-    columnStyles: { 0: { cellWidth: 12, halign: "center" }, 1: { cellWidth: 32, fontStyle: "bold" }, 2: { cellWidth: 52 }, 3: { cellWidth: 52 } },
-  });
-  y = doc.lastAutoTable.finalY + 8;
-
-  // ══════════════════════════════════════════
-  // FRAMEWORK DETAILS
-  // ══════════════════════════════════════════
+  // ══ FRAMEWORK DETAILS ══
   FRAMEWORKS.forEach((f) => {
-    need(38);
-    doc.setFontSize(13);
-    doc.setTextColor(...RED);
-    doc.setFont("helvetica", "bold");
+    need(36);
+    doc.setFontSize(13); doc.setTextColor(...RED); doc.setFont("helvetica", "bold");
     doc.text(f.lvl, M, y); y += 6;
-
-    doc.setFontSize(9.5);
-    doc.setTextColor(...GRY);
-    doc.setFont("helvetica", "italic");
-    const descLines = doc.splitTextToSize(f.desc, CW);
-    descLines.forEach((l) => { doc.text(l, M, y); y += 4.5; });
-    y += 2;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(200, 200, 200);
-    const noteLines = doc.splitTextToSize("Customize all text inside --> [ ] <-- brackets with your own details.", CW);
-    noteLines.forEach((l) => { need(5); doc.text(l, M, y); y += 4.5; });
-    y += 2;
-
+    doc.setFontSize(9.5); doc.setTextColor(...GRY); doc.setFont("helvetica", "italic");
+    doc.splitTextToSize(f.desc, CW).forEach((l) => { doc.text(l, M, y); y += 4.5; }); y += 3;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(180, 180, 180);
+    doc.text("Customize all text inside --> [ ] <-- brackets with your own details.", M, y); y += 5;
     promptBlock(f.text);
-    y += 2;
   });
 
-  // ══════════════════════════════════════════
-  // BONUS PROMPTS
-  // ══════════════════════════════════════════
+  // ══ BONUS PROMPTS ══
   newPage();
-
   heading("Bonus: Ready-to-Use Power Prompts", 18);
   para("Three battle-tested prompts you can copy-paste immediately. Each uses the ROCA+ framework principles.");
   y += 4;
-
   BONUS.forEach((b) => {
-    need(32);
-    doc.setFontSize(13);
-    doc.setTextColor(...WHT);
-    doc.setFont("helvetica", "bold");
+    need(30);
+    doc.setFontSize(13); doc.setTextColor(...WHT); doc.setFont("helvetica", "bold");
     doc.text(b.title, M, y); y += 6;
-
-    doc.setFontSize(9.5);
-    doc.setTextColor(...GRY);
-    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9.5); doc.setTextColor(...GRY); doc.setFont("helvetica", "italic");
     doc.text(b.desc, M, y); y += 6;
-
     doc.setFont("helvetica", "normal");
     promptBlock(b.text);
-    y += 2;
   });
 
-  // ══════════════════════════════════════════
-  // BACK COVER
-  // ══════════════════════════════════════════
+  // ══ BACK COVER ══
   newPage();
+  drawIcon(W / 2 - 15, H / 2 - 70, 30);
+  doc.setFontSize(42); doc.setTextColor(...RED); doc.setFont("helvetica", "bold");
+  doc.text("NATSEL.AI", W / 2, H / 2 - 20, { align: "center" });
+  doc.setFontSize(18); doc.setTextColor(...WHT);
+  doc.text("Your Career Evolution Starts", W / 2, H / 2 + 4, { align: "center" });
+  doc.text("Now", W / 2, H / 2 + 16, { align: "center" });
+  doc.setFontSize(11); doc.setTextColor(...GRY); doc.setFont("helvetica", "normal");
+  doc.text("You now have the tools, the frameworks, and the plan.", W / 2, H / 2 + 38, { align: "center" });
+  doc.text("The only variable left is execution.", W / 2, H / 2 + 48, { align: "center" });
+  doc.setFontSize(8); doc.setTextColor(...DGRY);
+  doc.text("\u00A9 NatSel.ai \u2014 All Rights Reserved", W / 2, H - 25, { align: "center" });
 
-  const cy = H / 2 - 30;
-  doc.setFontSize(42);
-  doc.setTextColor(...RED);
-  doc.setFont("helvetica", "bold");
-  doc.text("NATSEL.AI", W / 2, cy, { align: "center" });
-
-  doc.setFontSize(20);
-  doc.setTextColor(...WHT);
-  doc.text("Your Career Evolution Starts", W / 2, cy + 24, { align: "center" });
-  doc.text("Now", W / 2, cy + 36, { align: "center" });
-
-  doc.setFontSize(12);
-  doc.setTextColor(...GRY);
-  doc.setFont("helvetica", "normal");
-  doc.text("You now have the tools, the frameworks, and the plan.", W / 2, cy + 58, { align: "center" });
-  doc.text("The only variable left is execution.", W / 2, cy + 68, { align: "center" });
-
-  doc.setFontSize(8);
-  doc.setTextColor(...DGRY);
-  doc.text("\u00A9 NatSel.ai \u2014 All Rights Reserved", W / 2, H - 20, { align: "center" });
-
-  // ── Fix page numbers: renumber all pages skipping cover ──
+  // ══ FINAL PASS: Sequential page footers (skip cover + back cover) ══
   const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 2; i <= totalPages; i++) {
+  for (let i = 2; i < totalPages; i++) {
     doc.setPage(i);
-    // Clear old footer area
-    doc.setFillColor(18, 18, 18);
-    doc.rect(0, H - 16, W, 16, "F");
-    // Redraw footer with correct sequential numbering
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...GRY);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...GRY);
     doc.text("NatSel.ai \u2014 Career Survival Kit", M, H - 10);
     doc.text("Page " + (i - 1), W - M, H - 10, { align: "right" });
   }
-  // Clear footer from cover page
-  doc.setPage(1);
-  doc.setFillColor(18, 18, 18);
-  doc.rect(0, H - 16, W, 16, "F");
-  doc.setFontSize(8);
-  doc.setTextColor(...DGRY);
-  doc.text("\u00A9 NatSel.ai \u2014 All Rights Reserved", W / 2, H - 20, { align: "center" });
 
   return doc;
 }
